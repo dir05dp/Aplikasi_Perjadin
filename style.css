@@ -1,0 +1,441 @@
+/* ==========================================================================
+   STYLE.CSS - Aplikasi Pertanggung Jawaban Perjalanan Dinas
+   Satker PJN Wilayah III Provinsi Sulawesi Selatan
+   Pengaturan Kertas: A4S (210mm x 297mm Portrait), Margin: 1.5cm, Font: Arial
+   ========================================================================== */
+
+:root {
+  --pu-navy: #162a5c;
+  --pu-gold: #eab308;
+  --bg-workspace: #f1f5f9;
+  --border-doc: #000000;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-workspace);
+  font-family: 'Inter', Arial, sans-serif;
+  color: #1e293b;
+}
+
+/* ==========================================================================
+   PENGATURAN KERTAS A4S (210mm x 297mm) DENGAN MARGIN 1.5 CM & FONT ARIAL
+   ========================================================================== */
+@page {
+  size: A4 portrait;
+  margin: 1.5cm;
+}
+
+.a4-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 1.5cm;
+  margin: 0 auto 28px auto;
+  background: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+  border: 1px solid #cbd5e1;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: var(--doc-font-size, 10pt);
+  line-height: 1.3;
+  color: #000000;
+  position: relative;
+}
+
+.a4-page * {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+/* Kop Surat Image */
+.kop-surat-wrap {
+  width: 100%;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.kop-surat-img {
+  width: 100%;
+  max-height: 3.1cm;
+  object-fit: contain;
+  display: block;
+}
+
+/* Document Tables */
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: var(--doc-font-size, 10pt);
+  color: #000000;
+}
+
+.doc-table th,
+.doc-table td {
+  padding: 3px 6px;
+  vertical-align: top;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.doc-table-bordered th,
+.doc-table-bordered td {
+  border: 1px solid #000000;
+}
+
+/* Sheet 1 (SPD_Hal Depan) Middle Vertical Alignment */
+#page-spd .doc-table-bordered th,
+#page-spd .doc-table-bordered td {
+  vertical-align: middle !important;
+}
+
+.doc-box-frame {
+  border: 1.5px solid #000000;
+  padding: 10px 12px;
+}
+
+/* Form Controls inside A4 Document */
+.doc-input,
+.doc-select,
+.doc-textarea {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: var(--doc-font-size, 10pt);
+  color: #000000;
+  background-color: rgba(254, 249, 195, 0.45);
+  border: 1px dashed #94a3b8;
+  border-radius: 3px;
+  padding: 2px 5px;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.doc-input:focus,
+.doc-select:focus,
+.doc-textarea:focus {
+  outline: none;
+  background-color: #fef08a;
+  border: 1px solid #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.doc-input:disabled,
+.doc-select:disabled,
+.doc-textarea:disabled {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #000000 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #000000 !important;
+  cursor: not-allowed;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.doc-input-inline {
+  display: inline-block;
+  width: auto;
+  min-width: 60px;
+}
+
+.doc-input-num {
+  text-align: right;
+  font-weight: 600;
+}
+
+/* Accounting alignment for JUMLAH & SPD Rampung on Sheet 2 */
+.accounting-val {
+  display: block;
+  width: 100%;
+  text-align: right !important;
+  font-weight: 600;
+  padding: 2px 4px !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.accounting-val:disabled {
+  padding-right: 4px !important;
+}
+
+/* Interactive Date Picker Wrapper with Indonesian Formatted Display */
+.date-picker-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+.date-picker-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 2px 6px;
+  border: 1px dashed #94a3b8;
+  border-radius: 3px;
+  background-color: rgba(254, 249, 195, 0.45);
+  color: #000000;
+  cursor: pointer;
+  user-select: none;
+}
+
+.date-picker-icon {
+  font-size: 9pt;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.date-picker-native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.date-picker-native:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+body.locked-mode .date-picker-display {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  cursor: not-allowed;
+}
+
+body.locked-mode .date-picker-icon {
+  display: none !important;
+}
+
+/* Auto-wrapping textareas with justify support */
+.doc-textarea {
+  resize: none;
+  overflow: hidden;
+  min-height: 22px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: block;
+}
+
+.doc-justify {
+  text-align: justify !important;
+  text-justify: inter-word;
+}
+
+/* Linked Read-only Formula Field */
+.linked-field {
+  background-color: rgba(219, 234, 254, 0.4);
+  border-bottom: 1px dotted #64748b;
+  padding: 1px 3px;
+  border-radius: 2px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+body.locked-mode .linked-field {
+  background-color: transparent;
+  border-bottom-color: transparent;
+}
+
+/* Tab Navigation */
+.sheet-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.sheet-tab:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.sheet-tab.active {
+  background: #ffffff;
+  color: var(--pu-navy);
+  border-top: 3px solid var(--pu-gold);
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Responsive Scaling on smaller screens */
+@media screen and (max-width: 860px) {
+  .a4-workspace-scroll {
+    overflow-x: auto;
+    padding: 8px;
+  }
+}
+
+/* ==========================================================================
+   PRINT MEDIA RULES (A4S Portrait, 1.5cm Margin, Arial, Clean Borders)
+   ========================================================================== */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .a4-workspace-scroll {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .a4-page {
+    width: 100% !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .doc-input,
+  .doc-select,
+  .doc-textarea,
+  .date-picker-display {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+  }
+
+  .date-picker-icon,
+  .date-picker-native {
+    display: none !important;
+  }
+
+  .accounting-val {
+    padding-right: 4px !important;
+  }
+
+  .linked-field {
+    background-color: transparent !important;
+    border: none !important;
+  }
+
+  body.print-single-mode .sheet-section:not(.active-print-target) {
+    display: none !important;
+  }
+
+  body.print-single-mode .sheet-section.active-print-target {
+    display: block !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  body.print-all-mode .sheet-section.printable-sheet {
+    display: block !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  body.print-all-mode #sheet-spby.sheet-section.printable-sheet {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  body.print-all-mode #sheet-database {
+    display: none !important;
+  }
+}
+
+/* Pastikan teks dokumen selalu bisa diblok untuk Copy-Paste (Ctrl+C / Ctrl+V) */
+.a4-page,
+.a4-page *,
+.doc-input,
+.doc-textarea,
+.linked-field {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+}
+
+/* ==========================================================================
+   BOTTOM STATUS BAR: PENGATURAN BESAR HURUF & ZOOM LEMBAR KERJA
+   ========================================================================== */
+:root {
+  --doc-font-size: 10pt;
+  --doc-zoom: 1;
+}
+
+.a4-workspace-scroll {
+  padding-bottom: 72px;
+}
+
+.a4-page {
+  zoom: var(--doc-zoom, 1);
+}
+
+.bottom-settings-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(8px);
+  border-top: 2px solid #eab308;
+  color: #f8fafc;
+  padding: 8px 16px;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.15);
+}
+
+@media print {
+  .bottom-settings-bar {
+    display: none !important;
+  }
+  .a4-page {
+    zoom: 1 !important;
+  }
+}
+
+/* Sembunyikan teks placeholder "Pilih Pengikut (Opsional)" saat terkunci atau dicetak jika tidak ada yang dipilih */
+body.locked-mode .employee-dropdown-optional.empty-optional-select {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+@media print {
+  .employee-dropdown-optional.empty-optional-select {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    visibility: hidden !important;
+  }
+}

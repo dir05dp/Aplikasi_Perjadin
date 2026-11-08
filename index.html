@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aplikasi Pertanggung Jawaban Perjalanan Dinas - Satker PJN Wil. III Prov. SulSel</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="locked-mode">
+
+  <!-- ========================================================================
+       TOP CONTROL BAR (NO-PRINT) - TETAP & TIDAK DIUBAH
+       ======================================================================== -->
+  <header class="no-print sticky top-0 z-40 bg-[#162a5c] text-white shadow-lg border-b-4 border-yellow-400">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- App Identity -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-yellow-400 text-[#162a5c] flex items-center justify-center font-black text-lg shadow">
+          PU
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight leading-tight">
+            Aplikasi Pertanggung Jawaban Perjalanan Dinas
+          </h1>
+          <p class="text-xs text-blue-200">
+            Satker Pelaksanaan Jalan Nasional Wilayah III Provinsi Sulawesi Selatan • Kertas A4S (Margin 1,5 cm • Font Arial)
+          </p>
+        </div>
+      </div>
+
+      <!-- Lock Status & Action Toolbar (Hanya di Panel Atas) -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Status Lock Badge & Button -->
+        <div id="lockStatusBadge" class="flex items-center gap-2 bg-red-600/90 border border-red-400 px-3 py-1.5 rounded-lg text-xs font-semibold">
+          <span id="lockIcon">🔒</span>
+          <span id="lockStatusText">Terkunci (Read-Only)</span>
+          <button id="btnToggleLock" type="button" class="ml-1 bg-white text-slate-900 hover:bg-yellow-300 px-2.5 py-1 rounded font-bold transition shadow-sm">
+            Buka Kunci Edit
+          </button>
+        </div>
+
+        <!-- Save / Load (Cloud Firebase) -->
+        <button id="btnSaveData" type="button" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow flex items-center gap-1.5 transition" title="Simpan Data SPJ & Database Pegawai ke Cloud Firebase">
+          <span>💾</span> <span>Simpan</span>
+        </button>
+
+        <button id="btnLoadData" type="button" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow flex items-center gap-1.5 transition" title="Load Data SPJ dari Cloud Firebase">
+          <span>📂</span> <span>Load</span>
+        </button>
+
+        <!-- Print Options -->
+        <button id="btnPrintCurrent" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow flex items-center gap-1.5 transition" title="Cetak Sheet yang Sedang Aktif (A4S)">
+          <span>🖨️</span> <span>Print Sheet</span>
+        </button>
+
+        <button id="btnPrintAll" type="button" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow flex items-center gap-1.5 transition" title="Cetak Semua 4 Sheet Dokumen Sekaligus (A4S)">
+          <span>📑</span> <span>Print Semua</span>
+        </button>
+
+        <!-- Download Word & Excel -->
+        <button id="btnDownloadWord" type="button" class="bg-blue-700 hover:bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow flex items-center gap-1.5 transition" title="Download File Microsoft Word (.doc) Ukuran A4S Margin 1.5cm Font Arial">
+          <span>📘</span> <span>Word</span>
+        </button>
+
+        <button id="btnDownloadExcel" type="button" class="bg-green-700 hover:bg-green-600 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow flex items-center gap-1.5 transition" title="Download File Microsoft Excel (.xlsx) Semua 5 Sheet">
+          <span>📗</span> <span>Excel</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sub-bar: Sheet Tabs & Quick Active Employee Indicator -->
+    <div class="bg-slate-800/95 border-t border-slate-700 px-4 pt-2">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        <!-- Sheet Tabs -->
+        <nav class="flex flex-wrap gap-1" aria-label="Sheet Tabs">
+          <button type="button" data-sheet="spd" class="sheet-tab active">
+            <span>1. SPD_Hal Depan</span>
+          </button>
+          <button type="button" data-sheet="rincian" class="sheet-tab">
+            <span>2. RINCIAN</span>
+          </button>
+          <button type="button" data-sheet="kwitansi" class="sheet-tab">
+            <span>3. KWITANSI</span>
+          </button>
+          <button type="button" data-sheet="spby" class="sheet-tab">
+            <span>4. SPBY</span>
+          </button>
+          <button type="button" data-sheet="database" class="sheet-tab">
+            <span>5. Database Pegawai (<span id="dbCountBadge">42</span>)</span>
+          </button>
+        </nav>
+
+        <!-- Quick Active Employee Display -->
+        <div class="flex items-center gap-2 pb-2 text-xs text-slate-300">
+          <span>Pegawai Pelaksana: <strong id="quickActivePegawai" class="text-yellow-300">Malik, ST., MM</strong></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       NOTIFICATION BANNER / TOAST (NO-PRINT)
+       ======================================================================== -->
+  <div id="toastContainer" class="no-print fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+  <!-- ========================================================================
+       MODAL 1: PASSWORD EDIT DOKUMEN (SANDI = "wil3") (NO-PRINT)
+       ======================================================================== -->
+  <div id="passwordModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🔐</span>
+          <h2 class="text-lg font-bold text-slate-800">Masukkan Sandi Edit Dokumen</h2>
+        </div>
+        <button id="btnClosePasswordModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <p class="text-sm text-slate-600 mb-4">
+        Seluruh kolom isian dokumen dikunci (disable) untuk mencegah perubahan tidak sengaja. Masukkan sandi otorisasi untuk mengaktifkan mode edit dokumen.
+      </p>
+      <form id="formPasswordUnlock">
+        <label for="inputPassword" class="block text-xs font-bold uppercase text-slate-700 mb-1">Sandi Otorisasi Dokumen</label>
+        <input id="inputPassword" type="password" placeholder="Masukkan sandi..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 mb-2" autocomplete="off" />
+        <p id="passwordErrorMsg" class="text-xs text-red-600 font-semibold hidden mb-2">Sandi yang Anda masukkan salah!</p>
+        <div class="flex justify-end gap-2 mt-4">
+          <button id="btnCancelPassword" type="button" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#162a5c] hover:bg-blue-800 text-white shadow">
+            Buka Kunci
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: PASSWORD KHUSUS DATABASE PEGAWAI (NO-PRINT)
+       ======================================================================== -->
+  <div id="dbPasswordModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🛡️</span>
+          <h2 class="text-lg font-bold text-slate-800">Sandi Khusus Database Pegawai</h2>
+        </div>
+        <button id="btnCloseDbPasswordModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <p class="text-sm text-slate-600 mb-4">
+        Menu <strong>Database Pegawai</strong> memerlukan otorisasi tersendiri untuk melakukan <strong>Edit</strong>, <strong>Hapus</strong>, atau <strong>Tambah</strong> pegawai.
+      </p>
+      <form id="formDbPasswordUnlock">
+        <label for="inputDbPassword" class="block text-xs font-bold uppercase text-slate-700 mb-1">Sandi Database Pegawai</label>
+        <input id="inputDbPassword" type="password" placeholder="Masukkan sandi database..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 mb-2" autocomplete="off" />
+        <p id="dbPasswordErrorMsg" class="text-xs text-red-600 font-semibold hidden mb-2">Sandi Database yang Anda masukkan salah!</p>
+        <div class="flex justify-end gap-2 mt-4">
+          <button id="btnCancelDbPassword" type="button" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-lg text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white shadow">
+            Buka Kunci Database
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: EDIT DATA PEGAWAI (NO-PRINT)
+       ======================================================================== -->
+  <div id="editEmployeeModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">✏️</span>
+          <h2 class="text-lg font-bold text-slate-800">Edit Data Pegawai</h2>
+        </div>
+        <button id="btnCloseEditEmpModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <form id="formEditEmployee" class="space-y-3">
+        <input id="editEmpIndex" type="hidden" value="-1" />
+        <div>
+          <label for="editEmpNama" class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap &amp; Gelar</label>
+          <input id="editEmpNama" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+        </div>
+        <div>
+          <label for="editEmpNip" class="block text-xs font-bold text-slate-700 mb-1">NIP / NRP</label>
+          <input id="editEmpNip" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+        </div>
+        <div>
+          <label for="editEmpPangkat" class="block text-xs font-bold text-slate-700 mb-1">Pangkat / Golongan</label>
+          <input id="editEmpPangkat" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+        </div>
+        <div>
+          <label for="editEmpJabatan" class="block text-xs font-bold text-slate-700 mb-1">Jabatan Kesatkeran</label>
+          <input id="editEmpJabatan" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+        </div>
+        <div class="flex justify-end gap-2 pt-3">
+          <button id="btnCancelEditEmp" type="button" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#162a5c] hover:bg-blue-800 text-white shadow">
+            Simpan Perubahan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 4: KONFIRMASI HAPUS PEGAWAI (YA / TIDAK) (NO-PRINT)
+       ======================================================================== -->
+  <div id="deleteEmployeeModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">⚠️</span>
+          <h2 class="text-lg font-bold text-red-700">Konfirmasi Hapus Pegawai</h2>
+        </div>
+        <button id="btnCloseDeleteEmpModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <input id="deleteEmpIndex" type="hidden" value="-1" />
+      <p class="text-sm text-slate-700 mb-5">
+        Apakah Anda yakin ingin menghapus data pegawai <strong id="deleteEmpNameText" class="text-slate-900"></strong> dari Database Pegawai?
+      </p>
+      <div class="flex justify-end gap-2">
+        <button id="btnCancelDeleteEmp" type="button" class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-800">
+          Tidak
+        </button>
+        <button id="btnConfirmDeleteEmp" type="button" class="px-4 py-2 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow">
+          Ya, Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 5: LOAD DATA SPJ DARI CLOUD FIREBASE
+       (Hanya Daftar File dengan Tombol Load/Buka & Tombol Hapus)
+       ======================================================================== -->
+  <div id="loadModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-xl w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">📂</span>
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">Daftar File Tersimpan</h2>
+            <p class="text-xs text-slate-500">Pilih berkas SPJ Perjalanan Dinas untuk dibuka (Load) atau dihapus.</p>
+          </div>
+        </div>
+        <button id="btnCloseLoadModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <div id="cloudRecordsList" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+
+      <div class="flex justify-end mt-5">
+        <button id="btnCancelLoadModal" type="button" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 6: KEAMANAN HAPUS FILE DI DALAM LOAD (TAHAP 1: SANDI -> TAHAP 2: YA/TIDAK)
+       ======================================================================== -->
+  <div id="deleteRecordAuthModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6">
+      <input id="deleteRecordTargetKey" type="hidden" value="" />
+
+      <!-- Tahap 1: Masukkan Sandi Keamanan -->
+      <div id="deleteRecordStepPassword">
+        <div class="flex items-center justify-between border-b pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🔐</span>
+            <h2 class="text-lg font-bold text-slate-800">Masukkan Sandi Keamanan</h2>
+          </div>
+          <button id="btnCloseDeleteRecordModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        </div>
+        <p class="text-sm text-slate-600 mb-3">
+          Untuk menghapus berkas <strong id="deleteRecordPassTitle" class="text-slate-900"></strong>, masukkan sandi keamanan terlebih dahulu.
+        </p>
+        <form id="formDeleteRecordPassword">
+          <label for="inputDeleteRecordPassword" class="block text-xs font-bold uppercase text-slate-700 mb-1">Sandi Keamanan</label>
+          <input id="inputDeleteRecordPassword" type="password" placeholder="Masukkan sandi..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-600 mb-2" autocomplete="off" />
+          <p id="deleteRecordPasswordError" class="text-xs text-red-600 font-semibold hidden mb-2">Sandi yang Anda masukkan salah!</p>
+          <div class="flex justify-end gap-2 mt-4">
+            <button id="btnCancelDeleteRecordPass" type="button" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
+              Batal
+            </button>
+            <button type="submit" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#162a5c] hover:bg-blue-800 text-white shadow">
+              Lanjutkan
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tahap 2: Konfirmasi Peringatan Ya / Tidak -->
+      <div id="deleteRecordStepConfirm" class="hidden">
+        <div class="flex items-center justify-between border-b pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">⚠️</span>
+            <h2 class="text-lg font-bold text-red-700">Peringatan Hapus File</h2>
+          </div>
+        </div>
+        <p class="text-sm text-slate-700 mb-5">
+          Apakah Anda yakin ingin menghapus permanen berkas <strong id="deleteRecordConfirmTitle" class="text-slate-900"></strong>?
+        </p>
+        <div class="flex justify-end gap-2">
+          <button id="btnDeleteRecordNo" type="button" class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-800">
+            Tidak
+          </button>
+          <button id="btnDeleteRecordYes" type="button" class="px-4 py-2 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow">
+            Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MAIN WORKSPACE CONTAINER (A4S PAGES)
+       ======================================================================== -->
+  <main class="a4-workspace-scroll py-6 px-2 sm:px-6">
+
+    <!-- ======================================================================
+         SHEET 1: SPD_Hal Depan (SURAT PERJALANAN DINAS)
+         ====================================================================== -->
+    <section id="sheet-spd" class="sheet-section printable-sheet active-print-target">
+      <div class="a4-page" id="page-spd">
+        <!-- Kop Surat (kop_pjn3.png satu folder dengan index.html) -->
+        <div class="kop-surat-wrap">
+          <img src="kop_pjn3.png" alt="Kop Surat Satker PJN Wilayah III Prov. Sul-Sel" class="kop-surat-img" />
+        </div>
+
+        <!-- Lembar / Kode No / Nomor -->
+        <table class="doc-table mb-2" style="width: 100%;">
+          <tbody>
+            <tr>
+              <td style="width: 52%; vertical-align: middle;"></td>
+              <td style="width: 13%; vertical-align: middle;">Lembar</td>
+              <td style="width: 2%; vertical-align: middle;">:</td>
+              <td style="width: 33%; vertical-align: middle;">
+                <input id="spd_lembar" type="text" class="doc-input editable-control" value="" disabled />
+              </td>
+            </tr>
+            <tr>
+              <td style="vertical-align: middle;"></td>
+              <td style="vertical-align: middle;">Kode No</td>
+              <td style="vertical-align: middle;">:</td>
+              <td style="vertical-align: middle;">
+                <input id="spd_kode_no" type="text" class="doc-input editable-control" value="" disabled />
+              </td>
+            </tr>
+            <tr>
+              <td style="vertical-align: middle;"></td>
+              <td style="vertical-align: middle;">Nomor</td>
+              <td style="vertical-align: middle;">:</td>
+              <td style="vertical-align: middle;">
+                <input id="spd_nomor" type="text" class="doc-input editable-control font-semibold" value="KU0205/SPD/Bbpjn6.7/2026/131" disabled />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Tabel Utama SPD Hal Depan (1 - 10) dengan Middle Vertical Alignment -->
+        <table class="doc-table doc-table-bordered">
+          <tbody>
+            <!-- Baris 1 -->
+            <tr>
+              <td style="width: 5%; text-align: center; vertical-align: middle;">1</td>
+              <td style="width: 38%; vertical-align: middle;">Kepala Satuan Kerja</td>
+              <td colspan="2" style="width: 57%; vertical-align: middle;">
+                <input id="spd_kasatker_jabatan" type="text" class="doc-input editable-control" value="Kepala Satuan Kerja PJN Wil. III Prov. Sulawesi Selatan" disabled />
+              </td>
+            </tr>
+
+            <!-- Baris 2: Pilih Nama Pegawai (Dropdown) -> Otomatis Link NIP, Pangkat, Jabatan & Link ke Sheet 2 "Yang Menerima" -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">2</td>
+              <td style="vertical-align: middle;">
+                <div>Nama/NIP Pegawai Yang Melaksanakan</div>
+                <div>Perjalanan Dinas</div>
+              </td>
+              <td colspan="2" style="vertical-align: middle;">
+                <select id="spd_pegawai_nama" class="doc-select employee-dropdown editable-control font-bold" disabled></select>
+                <div class="mt-1">
+                  <input id="spd_pegawai_nip" type="text" class="doc-input linked-field" value="NIP 197012312007011017" readonly disabled title="Otomatis dari Database Pegawai (Tidak dapat diedit manual)" />
+                </div>
+              </td>
+            </tr>
+
+            <!-- Baris 3: Pangkat, Jabatan, Tingkat Biaya -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">3</td>
+              <td style="vertical-align: middle;">
+                <div class="mb-1">a. Pangkat dan Golongan</div>
+                <div class="mb-1">b. Jabatan / Instansi</div>
+                <div class="mb-1">&nbsp;</div>
+                <div>c. Tingkat Biaya Perjalanan Dinas</div>
+              </td>
+              <td colspan="2" style="vertical-align: middle;">
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span style="width: 18px;">a.</span>
+                  <input id="spd_pegawai_pangkat" type="text" class="doc-input linked-field" value="Pembina / IV-a" readonly disabled title="Otomatis dari Database Pegawai" />
+                </div>
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span style="width: 18px;">b.</span>
+                  <input id="spd_pegawai_jabatan" type="text" class="doc-input linked-field" value="Kepala Satuan Kerja" readonly disabled title="Otomatis dari Database Pegawai" />
+                </div>
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span style="width: 18px;"></span>
+                  <input id="spd_instansi_pegawai" type="text" class="doc-input editable-control" value="Satker PJN Wil. III Prov. Sulawesi Selatan" disabled />
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span style="width: 18px;">c.</span>
+                  <input id="spd_tingkat_biaya" type="text" class="doc-input editable-control" value="-" disabled />
+                </div>
+              </td>
+            </tr>
+
+            <!-- Baris 4: Maksud Perjalanan Dinas (Justify & Bisa di-Enter) -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">4</td>
+              <td style="vertical-align: middle;">Maksud Perjalanan Dinas:</td>
+              <td colspan="2" style="vertical-align: middle;">
+                <textarea id="spd_maksud" rows="3" class="doc-textarea doc-justify auto-wrap-textarea editable-control" disabled>Penelitian Lapangan Dalam Rangka Serah Terima Hibah BMN Berupa Jembatan Gantung Tahun 2024 Lingkup BBPJN SulSel ke Pemda Kab. Maros, Pemda Kab. Bone &amp; Pemda Kab. Jeneponto Prov. SulSel</textarea>
+              </td>
+            </tr>
+
+            <!-- Baris 5: Alat Angkutan -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">5</td>
+              <td style="vertical-align: middle;">Alat Angkutan Yang Dipergunakan</td>
+              <td colspan="2" style="vertical-align: middle;">
+                <input id="spd_angkutan" type="text" class="doc-input editable-control" value="Kendaraan Sewa" disabled />
+              </td>
+            </tr>
+
+            <!-- Baris 6: Tempat Berangkat & Tujuan (Justify & Bisa di-Enter) -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">6</td>
+              <td style="vertical-align: middle;">
+                <div class="mb-1">a. Tempat Berangkat</div>
+                <div>b. Tempat Tujuan</div>
+              </td>
+              <td colspan="2" style="vertical-align: middle;">
+                <div class="flex items-start gap-1.5 mb-1">
+                  <span style="width: 18px; padding-top: 2px;">a.</span>
+                  <textarea id="spd_tempat_berangkat" rows="1" class="doc-textarea doc-justify auto-wrap-textarea editable-control" disabled>Satker PJN Wil. III Prov. Sulawesi Selatan</textarea>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span style="width: 18px; padding-top: 2px;">b.</span>
+                  <textarea id="spd_tempat_tujuan" rows="1" class="doc-textarea doc-justify auto-wrap-textarea editable-control" disabled>Kab. Jeneponto, Kab. Maros dan Kab. Bone</textarea>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Baris 7: Lamanya (Terlink Otomatis dari Selisih Tanggal), Tanggal Berangkat & Kembali (Date Picker) -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">7</td>
+              <td style="vertical-align: middle;">
+                <div class="mb-1">a. Lamanya perjalanan Dinas</div>
+                <div class="mb-1">b. Tanggal Berangkat</div>
+                <div>c. Tanggal Harus Kembali/tiba ditempat Baru*)</div>
+              </td>
+              <td colspan="2" style="vertical-align: middle;">
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span style="width: 18px;">a.</span>
+                  <input id="spd_lama" type="text" class="doc-input linked-field font-semibold" value="03 (tiga) Hari" readonly disabled title="Terlink otomatis dari selisih Tanggal Berangkat & Tanggal Kembali" />
+                </div>
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span style="width: 18px;">b.</span>
+                  <div class="date-picker-wrap">
+                    <div class="date-picker-display">
+                      <span id="spd_tgl_berangkat_display">06 April 2026</span>
+                      <span class="date-picker-icon no-print">📅</span>
+                    </div>
+                    <input id="spd_tgl_berangkat" type="date" class="date-picker-native editable-control" value="2026-04-06" disabled title="Pilih Tanggal Berangkat dari Kalender" />
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span style="width: 18px;">c.</span>
+                  <div class="date-picker-wrap">
+                    <div class="date-picker-display">
+                      <span id="spd_tgl_kembali_display">08 April 2026</span>
+                      <span class="date-picker-icon no-print">📅</span>
+                    </div>
+                    <input id="spd_tgl_kembali" type="date" class="date-picker-native editable-control" value="2026-04-08" disabled title="Pilih Tanggal Kembali dari Kalender" />
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Baris 8: Pengikut Header -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">8</td>
+              <td style="vertical-align: middle;">Pengikut : Nama</td>
+              <td style="width: 28%; text-align: center; vertical-align: middle;">Tanggal Lahir</td>
+              <td style="width: 29%; text-align: center; vertical-align: middle;">Keterangan</td>
+            </tr>
+            <!-- Baris 8 Isi Pengikut (Dropdown Nama dari Database atau Kosong) -->
+            <tr>
+              <td style="vertical-align: middle;">&nbsp;</td>
+              <td style="vertical-align: middle;">
+                <select id="spd_pengikut1_nama" class="doc-select employee-dropdown-optional editable-control" disabled></select>
+              </td>
+              <td style="vertical-align: middle;"><input id="spd_pengikut1_tgl" type="text" class="doc-input editable-control text-center" value="" disabled /></td>
+              <td style="vertical-align: middle;"><input id="spd_pengikut1_ket" type="text" class="doc-input editable-control" value="" disabled /></td>
+            </tr>
+            <tr>
+              <td style="vertical-align: middle;">&nbsp;</td>
+              <td style="vertical-align: middle;">
+                <select id="spd_pengikut2_nama" class="doc-select employee-dropdown-optional editable-control" disabled></select>
+              </td>
+              <td style="vertical-align: middle;"><input id="spd_pengikut2_tgl" type="text" class="doc-input editable-control text-center" value="" disabled /></td>
+              <td style="vertical-align: middle;"><input id="spd_pengikut2_ket" type="text" class="doc-input editable-control" value="" disabled /></td>
+            </tr>
+
+            <!-- Baris 9: Pembebanan Anggaran -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">9</td>
+              <td style="vertical-align: middle;">
+                <div>Pembebanan Anggaran</div>
+                <div class="mb-1">a. Instansi</div>
+                <div>b. Akun</div>
+              </td>
+              <td colspan="2" style="vertical-align: middle;">
+                <div>&nbsp;</div>
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span style="width: 18px;">a.</span>
+                  <input id="spd_anggaran_instansi" type="text" class="doc-input editable-control" value="Satker PJN Wil. III Prov. Sulawesi Selatan" disabled />
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span style="width: 18px;">b.</span>
+                  <input id="spd_akun" type="text" class="doc-input editable-control font-semibold" value="7756.EBA.962.055.AA.524111" disabled />
+                </div>
+              </td>
+            </tr>
+
+            <!-- Baris 10: Keterangan Lain-lain (Nomor SPT Menerus Satu Kalimat & Tanggal SPT Date Picker) -->
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">10</td>
+              <td style="vertical-align: middle;">Keterangan Lain-lain</td>
+              <td colspan="2" style="vertical-align: middle;">
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span style="width: 95px; flex-shrink: 0; white-space: nowrap;">Nomor SPT</span>
+                  <span style="flex-shrink: 0;">:</span>
+                  <input id="spd_no_spt" type="text" class="doc-input editable-control" value="PS0603/B/Bbpjn6.7/2026/34" disabled />
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span style="width: 95px; flex-shrink: 0; white-space: nowrap;">Tanggal</span>
+                  <span style="flex-shrink: 0;">:</span>
+                  <div class="date-picker-wrap">
+                    <div class="date-picker-display">
+                      <span id="spd_tgl_spt_display">06 April 2026</span>
+                      <span class="date-picker-icon no-print">📅</span>
+                    </div>
+                    <input id="spd_tgl_spt" type="date" class="date-picker-native editable-control" value="2026-04-06" disabled title="Pilih Tanggal SPT dari Kalender" />
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="text-xs mt-1 mb-3">*) Coret yang tidak perlu</div>
+
+        <!-- Blok Tanda Tangan SPD Hal Depan -->
+        <table class="doc-table" style="width: 100%;">
+          <tbody>
+            <tr>
+              <td style="width: 50%; vertical-align: middle;"></td>
+              <td style="width: 18%; vertical-align: middle;">Dikeluarkan di</td>
+              <td style="width: 2%; vertical-align: middle;">:</td>
+              <td style="width: 30%; vertical-align: middle;">
+                <input id="spd_dikeluarkan_di" type="text" class="doc-input editable-control" value="Makassar" disabled />
+              </td>
+            </tr>
+            <tr>
+              <td style="vertical-align: middle;"></td>
+              <td style="vertical-align: middle;">Tanggal</td>
+              <td style="vertical-align: middle;">:</td>
+              <td style="vertical-align: middle;">
+                <div class="date-picker-wrap">
+                  <div class="date-picker-display">
+                    <span id="spd_tgl_dikeluarkan_display">06 April 2026</span>
+                    <span class="date-picker-icon no-print">📅</span>
+                  </div>
+                  <input id="spd_tgl_dikeluarkan" type="date" class="date-picker-native editable-control" value="2026-04-06" disabled title="Pilih Tanggal Dikeluarkan SPD dari Kalender" />
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td></td>
+              <td colspan="3" class="pt-3 text-center" style="vertical-align: middle;">
+                <div class="font-bold mb-12">
+                  <input id="spd_ttd_jabatan" type="text" class="doc-input editable-control text-center font-bold" value="Kepala Satuan Kerja," disabled />
+                </div>
+                <div>
+                  <select id="spd_kpa_nama" class="doc-select employee-dropdown editable-control text-center font-bold underline" disabled></select>
+                </div>
+                <div>
+                  <input id="spd_kpa_nip" type="text" class="doc-input linked-field text-center" value="NIP 197012312007011017" readonly disabled title="Otomatis dari Database Pegawai (Tidak dapat diedit manual)" />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SHEET 2: RINCIAN (RINCIAN BIAYA PERJALANAN DINAS)
+         ====================================================================== -->
+    <section id="sheet-rincian" class="sheet-section printable-sheet hidden">
+      <div class="a4-page" id="page-rincian">
+        <div class="doc-box-frame">
+          <h2 class="text-center font-bold text-sm underline mb-4">RINCIAN BIAYA PERJALANAN DINAS</h2>
+
+          <!-- Header Lampiran SPD -->
+          <table class="doc-table mb-3" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 30%;">LAMPIRAN SPD NOMOR</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 68%;">
+                  <input id="rincian_spd_nomor" type="text" class="doc-input linked-field font-semibold" readonly disabled title="Terlink otomatis dari Sheet 1 (='SPD_Hal Depan'!F10)" />
+                </td>
+              </tr>
+              <tr>
+                <td>TANGGAL</td>
+                <td>:</td>
+                <td>
+                  <input id="rincian_spd_tanggal" type="text" class="doc-input linked-field" readonly disabled title="Terlink otomatis dari Tanggal Dikeluarkan SPD Sheet 1 (='SPD_Hal Depan'!H43)" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Tabel Rincian Biaya -->
+          <table class="doc-table doc-table-bordered mb-3">
+            <thead>
+              <tr class="bg-slate-50">
+                <th style="width: 6%; text-align: center;">NO.</th>
+                <th style="width: 52%; text-align: center;">PERINCIAN BIAYA</th>
+                <th colspan="2" style="width: 24%; text-align: center;">JUMLAH</th>
+                <th style="width: 18%; text-align: center;">KETERANGAN</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- 1. Biaya Transportasi (Teks Bisa di-Enter) -->
+              <tr>
+                <td style="text-align: center;">1</td>
+                <td>
+                  <div class="font-bold">BIAYA TRANSPORTASI</div>
+                  <div class="mt-0.5">
+                    <textarea id="rincian_trans_uraian" rows="1" class="doc-textarea auto-wrap-textarea editable-control" disabled>Biaya Transportasi</textarea>
+                  </div>
+                </td>
+                <td style="width: 5%; border-right: none; vertical-align: bottom;">Rp.</td>
+                <td style="width: 19%; border-left: none; vertical-align: bottom;">
+                  <input id="rincian_trans_jumlah" type="text" inputmode="numeric" class="doc-input accounting-val accounting-input editable-control" value="-" disabled title="Format Accounting" />
+                </td>
+                <td>
+                  <input id="rincian_trans_ket" type="text" class="doc-input editable-control" value="" disabled />
+                </td>
+              </tr>
+
+              <!-- 2. Uang Harian (Lama Hari & Tanggal Berangkat s/d Kembali Terlink dari Sheet 1) -->
+              <tr>
+                <td style="text-align: center;">2</td>
+                <td>
+                  <div class="font-bold">UANG HARIAN</div>
+                  <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                    <span>Uang Harian selama</span>
+                    <span id="rincian_uh_lama_display" class="linked-field font-bold">03 (tiga) Hari</span>
+                  </div>
+                  <div class="mt-0.5">
+                    <input id="rincian_uh_tanggal_ket" type="text" class="doc-input linked-field" value="pada Tgl. 06 April 2026 s/d 08 April 2026" readonly disabled title="Terlink otomatis dari Tanggal Berangkat & Kembali pada Sheet 1" />
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                    <span id="rincian_uh_hari_label" class="linked-field font-bold">3</span>
+                    <span>x Rp.</span>
+                    <input id="rincian_uh_tarif" type="text" inputmode="numeric" class="doc-input accounting-val accounting-input editable-control" style="width: 110px; display: inline-block;" value="258,000" disabled title="Format Accounting" />
+                    <span>,-</span>
+                  </div>
+                </td>
+                <td style="border-right: none; vertical-align: middle;">Rp.</td>
+                <td style="border-left: none; vertical-align: middle;">
+                  <input id="rincian_uh_jumlah" type="text" class="doc-input accounting-val linked-field" value="774,000" readonly disabled title="Otomatis: Lama Hari Sheet 1 x Tarif Uang Harian (Format Accounting)" />
+                </td>
+                <td>
+                  <input id="rincian_uh_ket" type="text" class="doc-input editable-control" value="" disabled />
+                </td>
+              </tr>
+
+              <!-- 3. Uang Penginapan (Teks Bisa di-Enter) -->
+              <tr>
+                <td style="text-align: center;">3</td>
+                <td>
+                  <div class="font-bold">UANG PENGINAPAN</div>
+                  <div class="mt-0.5">
+                    <textarea id="rincian_inap_uraian" rows="1" class="doc-textarea auto-wrap-textarea editable-control" disabled>Biaya Penginapan</textarea>
+                  </div>
+                </td>
+                <td style="border-right: none; vertical-align: bottom;">Rp.</td>
+                <td style="border-left: none; vertical-align: bottom;">
+                  <input id="rincian_inap_jumlah" type="text" inputmode="numeric" class="doc-input accounting-val accounting-input editable-control" value="-" disabled title="Format Accounting" />
+                </td>
+                <td>
+                  <input id="rincian_inap_ket" type="text" class="doc-input editable-control" value="" disabled />
+                </td>
+              </tr>
+
+              <!-- 4. Uang Representasi (Teks Bisa di-Enter) -->
+              <tr>
+                <td style="text-align: center;">4</td>
+                <td>
+                  <div class="font-bold">UANG REPRESENTASI</div>
+                  <div class="mt-0.5">
+                    <textarea id="rincian_rep_uraian" rows="1" class="doc-textarea auto-wrap-textarea editable-control" disabled>Uang Representasi</textarea>
+                  </div>
+                </td>
+                <td style="border-right: none; vertical-align: bottom;">Rp.</td>
+                <td style="border-left: none; vertical-align: bottom;">
+                  <input id="rincian_rep_jumlah" type="text" inputmode="numeric" class="doc-input accounting-val accounting-input editable-control" value="-" disabled title="Format Accounting" />
+                </td>
+                <td>
+                  <input id="rincian_rep_ket" type="text" class="doc-input editable-control" value="" disabled />
+                </td>
+              </tr>
+
+              <!-- JUMLAH TOTAL -->
+              <tr class="font-bold">
+                <td></td>
+                <td style="text-align: center;">JUMLAH</td>
+                <td style="border-right: none;">Rp.</td>
+                <td style="border-left: none;">
+                  <input id="rincian_total_display" type="text" class="doc-input accounting-val linked-field font-bold" value="774,000" readonly disabled title="=SUM(I16:J34) (Format Accounting)" />
+                </td>
+                <td></td>
+              </tr>
+
+              <!-- TERBILANG -->
+              <tr>
+                <td colspan="5" class="py-1.5">
+                  <span class="font-bold">TERBILANG : </span>
+                  <span id="rincian_terbilang_display" class="font-bold italic linked-field">Tujuh Ratus Tujuh Puluh Empat Ribu Rupiah</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Tanda Tangan Bendahara & Yang Menerima -->
+          <table class="doc-table mb-3" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 52%;"></td>
+                <td style="width: 48%;">
+                  <div class="flex items-center gap-1">
+                    <input id="rincian_kota_tanggal" type="text" class="doc-input editable-control" style="width: 85px;" value="Makassar," disabled />
+                    <div class="date-picker-wrap" style="flex: 1;">
+                      <div class="date-picker-display">
+                        <span id="rincian_tanggal_lunas_display">11 Februari 2026</span>
+                        <span class="date-picker-icon no-print">📅</span>
+                      </div>
+                      <input id="rincian_tanggal_lunas" type="date" class="date-picker-native editable-control" value="2026-02-11" disabled title="Pilih Tanggal dari Kalender (Otomatis Terlink ke Kwitansi & SPBy)" />
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div>Telah dibayar sejumlah,</div>
+                  <div class="flex items-center gap-2 font-semibold">
+                    <span>Rp</span>
+                    <span id="rincian_dibayar_sejumlah" class="linked-field">774,000</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Telah terima sejumlah uang sebesar :</div>
+                  <div class="flex items-center gap-2 font-semibold">
+                    <span>Rp</span>
+                    <span id="rincian_diterima_sejumlah" class="linked-field">774,000</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="pt-2 text-center">
+                  <div>Bendahara Pengeluaran</div>
+                  <div class="mb-10">Pelaksanaan Jalan Nasional Wil.III Prov.SulSel</div>
+                  <div>
+                    <select id="rincian_bendahara_nama" class="doc-select employee-dropdown editable-control text-center font-bold underline" disabled></select>
+                  </div>
+                  <div>
+                    <input id="rincian_bendahara_nip" type="text" class="doc-input linked-field text-center" value="NIP 197605152014102001" readonly disabled title="Otomatis dari Database Pegawai (Tidak dapat diedit manual)" />
+                  </div>
+                </td>
+                <td class="pt-2 text-center">
+                  <div>Yang Menerima,</div>
+                  <div class="mb-10">&nbsp;</div>
+                  <div>
+                    <input id="rincian_penerima_nama" type="text" class="doc-input linked-field text-center font-bold underline" value="Malik, ST., MM" readonly disabled title="Terlink otomatis dari Pegawai Yang Melaksanakan Perjalanan Dinas di Sheet 1 (='SPD_Hal Depan'!C14)" />
+                  </div>
+                  <div>
+                    <input id="rincian_penerima_nip" type="text" class="doc-input linked-field text-center" value="NIP 197012312007011017" readonly disabled title="Terlink otomatis dari Sheet 1 (='SPD_Hal Depan'!C15)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <hr class="border-t border-black my-3" />
+
+          <!-- PERHITUNGAN SPD RAMPUNG -->
+          <h3 class="text-center font-bold text-sm underline mb-3">PERHITUNGAN SPD RAMPUNG</h3>
+          <table class="doc-table" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 34%; vertical-align: middle;">Ditetapkan sejumlah</td>
+                <td style="width: 3%; vertical-align: middle;">:</td>
+                <td style="width: 5%; vertical-align: middle;">Rp</td>
+                <td style="width: 23%; vertical-align: middle; text-align: right;">
+                  <input id="rincian_rampung_ditetapkan" type="text" class="doc-input accounting-val linked-field" value="774,000" readonly disabled />
+                </td>
+                <td style="width: 35%;"></td>
+              </tr>
+              <tr>
+                <td style="vertical-align: middle;">Yang telah dibayar semula</td>
+                <td style="vertical-align: middle;">:</td>
+                <td class="border-b border-black" style="vertical-align: middle;">Rp</td>
+                <td class="border-b border-black" style="vertical-align: middle; text-align: right;">
+                  <input id="rincian_rampung_semula" type="text" inputmode="numeric" class="doc-input accounting-val accounting-input editable-control" value="774,000" disabled title="Format Accounting (Contoh: 774,000)" />
+                </td>
+                <td></td>
+              </tr>
+              <tr>
+                <td style="vertical-align: middle;">Sisa kurang/lebih</td>
+                <td style="vertical-align: middle;">:</td>
+                <td style="vertical-align: middle;">Rp</td>
+                <td style="vertical-align: middle; text-align: right;">
+                  <input id="rincian_rampung_sisa" type="text" class="doc-input accounting-val linked-field" value="-" readonly disabled />
+                </td>
+                <td></td>
+              </tr>
+              <tr>
+                <td colspan="3"></td>
+                <td colspan="2" class="pt-3 text-center">
+                  <div>Kuasa Pengguna Anggaran</div>
+                  <div class="mb-10">PJN Wil.III Prov.SulSel</div>
+                  <div>
+                    <select id="rincian_kpa_nama" class="doc-select employee-dropdown editable-control text-center font-bold underline" disabled></select>
+                  </div>
+                  <div>
+                    <input id="rincian_kpa_nip" type="text" class="doc-input linked-field text-center" readonly disabled title="Otomatis dari Database Pegawai (Tidak dapat diedit manual)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SHEET 3: KWITANSI (KUITANSI)
+         ====================================================================== -->
+    <section id="sheet-kwitansi" class="sheet-section printable-sheet hidden">
+      <div class="a4-page" id="page-kwitansi">
+        <div class="doc-box-frame" style="min-height: 255mm;">
+          <!-- Kop Surat -->
+          <div class="kop-surat-wrap">
+            <img src="kop_pjn3.png" alt="Kop Surat Satker PJN Wilayah III Prov. Sul-Sel" class="kop-surat-img" />
+          </div>
+
+          <!-- Tahun Anggaran / Nomor Bukti / Mata Anggaran -->
+          <table class="doc-table mb-4" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 45%;"></td>
+                <td style="width: 20%;">Tahun Anggaran</td>
+                <td style="width: 2%;">:</td>
+                <td style="width: 33%;">
+                  <input id="kwitansi_tahun" type="text" class="doc-input editable-control" value="2026" disabled />
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>Nomor Bukti</td>
+                <td>:</td>
+                <td>
+                  <input id="kwitansi_no_bukti" type="text" class="doc-input editable-control" value="" disabled />
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>Mata Anggaran</td>
+                <td>:</td>
+                <td>
+                  <input id="kwitansi_mak" type="text" class="doc-input linked-field font-semibold" readonly disabled title="Terlink otomatis dari Akun SPD" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Judul KUITANSI -->
+          <div class="text-center my-4">
+            <span class="inline-block border border-black px-8 py-1 font-bold tracking-[0.25em] text-sm">
+              K U I T A N S I
+            </span>
+          </div>
+
+          <hr class="border-t-2 border-black mb-5" />
+
+          <!-- Isi Kuitansi -->
+          <table class="doc-table mb-6" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 28%;">Sudah Terima dari</td>
+                <td style="width: 3%;">:</td>
+                <td style="width: 69%;" class="font-semibold">
+                  <div>KUASA PENGGUNA ANGGARAN / PEMBUAT KOMITMEN</div>
+                  <div>SATKER PELAKSANAAN JALAN NASIONAL WILAYAH III</div>
+                  <div>PROVINSI SULAWESI SELATAN</div>
+                </td>
+              </tr>
+              <tr>
+                <td>Jumlah Uang</td>
+                <td>:</td>
+                <td>
+                  <div class="flex items-center gap-2 font-bold">
+                    <span>Rp</span>
+                    <span id="kwitansi_jumlah_uang" class="linked-field">774,000</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>Terbilang</td>
+                <td>:</td>
+                <td>
+                  <div id="kwitansi_terbilang" class="linked-field doc-justify italic font-semibold">Tujuh Ratus Tujuh Puluh Empat Ribu Rupiah</div>
+                </td>
+              </tr>
+              <tr>
+                <td>Untuk Pembayaran</td>
+                <td>:</td>
+                <td>
+                  <div class="doc-justify">
+                    <span class="select-none">Perjalanan Dinas a.n </span>
+                    <span id="kwitansi_untuk_pembayaran_nama" class="linked-field font-semibold" title="Terlink otomatis dari 'Yang Menerima' di Sheet 2">Malik, ST., MM</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="3" class="pt-1 font-semibold">Berdasarkan SPD</td>
+              </tr>
+              <tr>
+                <td>Nomor</td>
+                <td>:</td>
+                <td>
+                  <input id="kwitansi_spd_nomor" type="text" class="doc-input linked-field" readonly disabled title="=RINCIAN!G9" />
+                </td>
+              </tr>
+              <tr>
+                <td>Tanggal</td>
+                <td>:</td>
+                <td>
+                  <input id="kwitansi_spd_tanggal" type="text" class="doc-input linked-field" readonly disabled title="=RINCIAN!G10" />
+                </td>
+              </tr>
+              <tr>
+                <td>Untuk Perjalanan Dinas dari</td>
+                <td>:</td>
+                <td>
+                  <textarea id="kwitansi_rute" rows="2" class="doc-textarea doc-justify auto-wrap-textarea editable-control" disabled title="Otomatis terlink ke 'Untuk Pembayaran' pada Sheet 4 (SPBy)">Kantor Satker PJN Wil.III Prov.SulSel Ke Kantor ATR/BPN Kab.ParePare (PP)</textarea>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Tanda Tangan Penerima di Bawah Tanggal -->
+          <table class="doc-table mb-8" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 48%;"></td>
+                <td style="width: 52%; text-align: center;">
+                  <div>
+                    <span id="kwitansi_kota_tgl" class="linked-field">Makassar, 11 Februari 2026</span>
+                  </div>
+                  <div class="mb-12">
+                    <div id="kwitansi_penerima_jabatan" class="linked-field text-center">Kepala Satuan Kerja</div>
+                  </div>
+                  <div>
+                    <input id="kwitansi_penerima_nama" type="text" class="doc-input linked-field text-center font-bold underline" value="Malik, ST., MM" readonly disabled title="Terlink otomatis dari 'Yang Menerima' di Sheet 2 (=RINCIAN!H52)" />
+                  </div>
+                  <div>
+                    <input id="kwitansi_penerima_nip" type="text" class="doc-input linked-field text-center" value="NIP 197012312007011017" readonly disabled title="Terlink otomatis dari Sheet 2 (=RINCIAN!H53)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Tanda Tangan KPA/PPK & Bendahara -->
+          <table class="doc-table" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td style="width: 50%; text-align: center;">
+                  <div>Setuju dibebankan pada mata anggaran berkenaan</div>
+                  <div>Kuasa Pengguna Anggaran,</div>
+                  <div class="mb-12">Pejabat Pembuat Komitmen</div>
+                  <div>
+                    <input id="kwitansi_kpa_nama" type="text" class="doc-input linked-field text-center font-bold underline" value="Malik, ST., MM" readonly disabled title="Terlink otomatis dari Kuasa Pengguna Anggaran di Sheet 2 (=RINCIAN!H70)" />
+                  </div>
+                  <div>
+                    <input id="kwitansi_kpa_nip" type="text" class="doc-input linked-field text-center" value="NIP 197012312007011017" readonly disabled title="Terlink otomatis dari Sheet 2 (=RINCIAN!H71)" />
+                  </div>
+                </td>
+                <td style="width: 50%; text-align: center;">
+                  <div>Lunas dibayar tanggal,</div>
+                  <div>Bendahara Pengeluaran</div>
+                  <div class="mb-12">&nbsp;</div>
+                  <div>
+                    <input id="kwitansi_bendahara_nama" type="text" class="doc-input linked-field text-center font-bold underline" value="Wahyuni, SE" readonly disabled title="Terlink otomatis dari Bendahara Pengeluaran di Sheet 2 (=RINCIAN!B52)" />
+                  </div>
+                  <div>
+                    <input id="kwitansi_bendahara_nip" type="text" class="doc-input linked-field text-center" value="NIP 197605152014102001" readonly disabled title="Terlink otomatis dari Sheet 2 (=RINCIAN!B53)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SHEET 4: SPBY (SURAT PERINTAH BAYAR)
+         ====================================================================== -->
+    <section id="sheet-spby" class="sheet-section printable-sheet hidden">
+      <div class="a4-page" id="page-spby">
+        <div class="border border-black" style="min-height: 255mm;">
+          <!-- Header Kementerian / Satker -->
+          <div class="border-b border-black py-3 px-4 text-center font-bold">
+            <div class="text-sm">KEMENTERIAN PEKERJAAN UMUM</div>
+            <div class="text-sm">SATKER PELAKSANAAN JALAN NASIONAL WIL.III PROVINSI SULAWESI SELATAN</div>
+            <div class="text-sm">(693865)</div>
+          </div>
+
+          <!-- Judul SURAT PERINTAH BAYAR (SPBy) -->
+          <div class="border-b border-black py-4 px-6">
+            <h2 class="text-center font-bold text-sm underline mb-2">SURAT PERINTAH BAYAR (SPBy)</h2>
+            <table class="doc-table mx-auto" style="width: 55%;">
+              <tbody>
+                <tr>
+                  <td style="width: 28%;">Tanggal</td>
+                  <td style="width: 4%;">:</td>
+                  <td style="width: 68%;">
+                    <input id="spby_tanggal" type="text" class="doc-input editable-control" value="" disabled />
+                  </td>
+                </tr>
+                <tr>
+                  <td>Nomor</td>
+                  <td>:</td>
+                  <td>
+                    <input id="spby_nomor" type="text" class="doc-input editable-control" value="" disabled />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Blok Perintah Membayar -->
+          <div class="border-b border-black py-4 px-6">
+            <p class="mb-3 doc-justify">
+              Saya yang bertandatangan di bawah ini selaku Kuasa Pengguna Anggaran memerintahkan Bendahara Pengeluaran agar melakukan Pembayaran sejumlah :
+            </p>
+            <table class="doc-table" style="width: 100%;">
+              <tbody>
+                <tr>
+                  <td style="width: 22%;">Jumlah Uang</td>
+                  <td style="width: 3%;">:</td>
+                  <td style="width: 75%;" class="font-bold">
+                    <span>Rp. </span>
+                    <span id="spby_jumlah_uang" class="linked-field">774,000</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Terbilang</td>
+                  <td>:</td>
+                  <td class="font-bold">
+                    <div id="spby_terbilang" class="linked-field doc-justify">Tujuh Ratus Tujuh Puluh Empat Ribu Rupiah</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Blok Kepada & Untuk Pembayaran -->
+          <div class="border-b border-black py-4 px-6">
+            <table class="doc-table mb-4" style="width: 100%;">
+              <tbody>
+                <tr>
+                  <td style="width: 22%;">Kepada</td>
+                  <td style="width: 3%;">:</td>
+                  <td style="width: 75%;">
+                    <input id="spby_kepada" type="text" class="doc-input linked-field font-bold" value="Malik, ST., MM" readonly disabled title="Terlink otomatis dari 'Yang Menerima' di Sheet 2" />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">Untuk Pembayaran</td>
+                  <td style="vertical-align: top;">:</td>
+                  <td style="vertical-align: top;">
+                    <div id="spby_untuk_pembayaran" class="linked-field doc-justify leading-snug" style="display: block; width: 100%; white-space: pre-line;" title="Terlink otomatis dari 'Untuk Perjalanan Dinas dari' di Sheet 3">Perjalanan Dinas dari Kantor Satker PJN Wil.III Prov.SulSel Ke Kantor ATR/BPN Kab.ParePare (PP)</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="mb-1">Atas dasar :</div>
+            <table class="doc-table mb-4" style="width: 100%;">
+              <tbody>
+                <tr>
+                  <td style="width: 4%;">1.</td>
+                  <td style="width: 34%;">Kuitansi / bukti pembelian</td>
+                  <td style="width: 3%;">:</td>
+                  <td style="width: 59%;">
+                    <div class="leading-snug doc-justify">
+                      <span>Kuitansi &amp; Rincian Perjalanan Dinas Tanggal </span>
+                      <span id="spby_tgl_kuitansi" class="linked-field font-semibold">11 Februari 2026</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2.</td>
+                  <td>Nota / bukti penerimaan barang/jasa</td>
+                  <td>:</td>
+                  <td>
+                    <textarea id="spby_nota_bukti" rows="1" class="doc-textarea doc-justify auto-wrap-textarea editable-control" disabled></textarea>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="mb-1">
+              <textarea id="spby_layanan" rows="1" class="doc-textarea doc-justify auto-wrap-textarea editable-control" disabled>Layanan Umum,Pengelolaan Perbendaharaan,Administrasi Kegiatan Satker Induk</textarea>
+            </div>
+            <div class="mb-1">
+              <textarea id="spby_jenis_belanja" rows="1" class="doc-textarea doc-justify auto-wrap-textarea editable-control" disabled>Belanja Perjalanan Dinas Biasa</textarea>
+            </div>
+            <div class="flex items-center gap-2">
+              <span style="width: 180px;">Kegiatan, Output, Akun</span>
+              <span>:</span>
+              <input id="spby_mak" type="text" class="doc-input linked-field font-semibold" readonly disabled title="=KWITANSI!L25" />
+            </div>
+          </div>
+
+          <!-- Blok 3 Tanda Tangan SPBy -->
+          <div class="py-5 px-4">
+            <div class="text-right pr-8 mb-1">
+              <span>Makassar, Tgl, </span>
+              <span id="spby_tgl_ttd" class="linked-field font-semibold">11 Februari 2026</span>
+            </div>
+            <table class="doc-table" style="width: 100%;">
+              <tbody>
+                <tr>
+                  <td style="width: 33%; text-align: center;">
+                    <div>Setuju/Lunas dibayar, tgl.</div>
+                    <div class="mb-12">Bendahara Pengeluaran,</div>
+                    <div>
+                      <input id="spby_bendahara_nama" type="text" class="doc-input linked-field text-center font-bold underline" value="Wahyuni, SE" readonly disabled title="Terlink otomatis dari Bendahara Pengeluaran di Sheet 2" />
+                    </div>
+                    <div>
+                      <input id="spby_bendahara_nip" type="text" class="doc-input linked-field text-center" value="NIP 197605152014102001" readonly disabled title="Terlink otomatis dari Sheet 2" />
+                    </div>
+                  </td>
+                  <td style="width: 34%; text-align: center;">
+                    <div>Diterima Tgl.</div>
+                    <div class="mb-12">Penerima Uang,</div>
+                    <div>
+                      <input id="spby_penerima_nama" type="text" class="doc-input linked-field text-center font-bold underline" value="Malik, ST., MM" readonly disabled title="Terlink otomatis dari 'Yang Menerima' di Sheet 2" />
+                    </div>
+                    <div>
+                      <input id="spby_penerima_nip" type="text" class="doc-input linked-field text-center" value="NIP 197012312007011017" readonly disabled title="Terlink otomatis dari Sheet 2" />
+                    </div>
+                  </td>
+                  <td style="width: 33%; text-align: center;">
+                    <div>Kuasa Pengguna Anggaran</div>
+                    <div class="mb-12">Pejabat Pembuat Komitmen</div>
+                    <div>
+                      <input id="spby_kpa_nama" type="text" class="doc-input linked-field text-center font-bold underline" value="Malik, ST., MM" readonly disabled title="Terlink otomatis dari Kuasa Pengguna Anggaran di Sheet 2" />
+                    </div>
+                    <div>
+                      <input id="spby_kpa_nip" type="text" class="doc-input linked-field text-center" value="NIP 197012312007011017" readonly disabled title="Terlink otomatis dari Sheet 2" />
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SHEET 5: DATABASE PEGAWAI (TERINTEGRASI CLOUD FIREBASE)
+         ====================================================================== -->
+    <section id="sheet-database" class="sheet-section hidden">
+      <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">DATABASE PEGAWAI — SATKER PJN WIL. III PROV. SUL-SEL</h2>
+            <p class="text-xs text-slate-600">
+              Data pada tabel ini terlink langsung ke seluruh sheet &amp; tersinkronisasi dengan Cloud Firebase.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Status Kunci Khusus Database Pegawai -->
+            <div id="dbLockStatusBadge" class="flex items-center gap-2 bg-red-600/90 border border-red-400 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
+              <span id="dbLockIcon">🔒</span>
+              <span id="dbLockStatusText">Database Terkunci</span>
+              <button id="btnToggleDbLock" type="button" class="ml-1 bg-white text-slate-900 hover:bg-yellow-300 px-2.5 py-1 rounded font-bold transition shadow-sm">
+                Buka Kunci Database
+              </button>
+            </div>
+            <!-- Tombol Tambah Pegawai (Membuka Popup Tambah Pegawai) -->
+            <button id="btnOpenAddEmpModal" type="button" class="db-editable-control bg-[#162a5c] hover:bg-blue-800 disabled:opacity-45 disabled:cursor-not-allowed text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow transition flex items-center gap-1" disabled>
+              <span>+</span> <span>Tambah</span>
+            </button>
+            <input id="dbSearchInput" type="text" placeholder="Cari Nama / NIP / Jabatan..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" />
+          </div>
+        </div>
+
+        <!-- Tabel Database Pegawai (Hanya Fitur Edit & Hapus dengan Konfirmasi Ya/Tidak) -->
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-xs">
+            <thead>
+              <tr class="bg-[#162a5c] text-white">
+                <th class="border border-slate-300 px-3 py-2 text-center" style="width: 50px;">NO</th>
+                <th class="border border-slate-300 px-3 py-2 text-left">NAMA</th>
+                <th class="border border-slate-300 px-3 py-2 text-left">NIP/NRP</th>
+                <th class="border border-slate-300 px-3 py-2 text-left">PANGKAT / GOLONGAN</th>
+                <th class="border border-slate-300 px-3 py-2 text-left">JABATAN KESATKERAN</th>
+                <th class="border border-slate-300 px-3 py-2 text-center" style="width: 130px;">AKSI</th>
+              </tr>
+            </thead>
+            <tbody id="databaseTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       MODAL 7: PERINGATAN SAAT MENYIMPAN JIKA ADA FILE/DOKUMEN YANG SAMA (YA / TIDAK)
+       ======================================================================== -->
+  <div id="overwriteConfirmModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">⚠️</span>
+          <h2 class="text-lg font-bold text-amber-700">Ditemukan file/dokumen yang sama</h2>
+        </div>
+        <button id="btnCloseOverwriteModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <p class="text-sm text-slate-700 mb-2">
+        Perbarui file/dokumen yang ada?
+      </p>
+      <p id="overwriteDocInfo" class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded p-2.5 mb-5"></p>
+      <div class="flex justify-end gap-2">
+        <button id="btnOverwriteNo" type="button" class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-800">
+          Tidak
+        </button>
+        <button id="btnOverwriteYes" type="button" class="px-4 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow">
+          Ya
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 8: PERINGATAN BERHASIL MENYIMPAN DOKUMEN BARU (TOMBOL OK)
+       ======================================================================== -->
+  <div id="saveNewSuccessModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6 text-center">
+      <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
+        ✅
+      </div>
+      <h2 class="text-lg font-bold text-slate-800 mb-2">Berhasil Menyimpan File/Dokumen Baru</h2>
+      <p id="saveNewDocInfo" class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2.5 mb-5"></p>
+      <div class="flex justify-center">
+        <button id="btnSaveNewOk" type="button" class="px-6 py-2 rounded-lg text-xs font-bold bg-[#162a5c] hover:bg-blue-800 text-white shadow">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 9: PERINGATAN MEMBUKA FILE SAAT LEMBAR KERJA TIDAK TERKUNCI (YA / TIDAK)
+       ======================================================================== -->
+  <div id="loadUnlockedWarnModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">⚠️</span>
+          <h2 class="text-lg font-bold text-amber-700">Peringatan Membuka File</h2>
+        </div>
+        <button id="btnCloseLoadUnlockedModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+        Anda akan membuka file/dokumen yang terpilih, Pastikan lembar kerja sebelumnya SUDAH disave ya...
+      </p>
+      <p id="loadUnlockedDocInfo" class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded p-2.5 mb-5"></p>
+      <div class="flex justify-end gap-2">
+        <button id="btnLoadUnlockedNo" type="button" class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-800">
+          Tidak
+        </button>
+        <button id="btnLoadUnlockedYes" type="button" class="px-4 py-2 rounded-lg text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white shadow">
+          Ya
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 10: POPUP TAMBAH PEGAWAI BARU (TOMBOL SIMPAN & BATAL) (NO-PRINT)
+       ======================================================================== -->
+  <div id="addEmployeeModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">👤</span>
+          <h2 class="text-lg font-bold text-slate-800">Tambah Pegawai Baru</h2>
+        </div>
+        <button id="btnCloseAddEmpModal" type="button" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <form id="formAddEmployee" class="space-y-3">
+        <div>
+          <label for="newEmpNama" class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap &amp; Gelar</label>
+          <input id="newEmpNama" type="text" placeholder="Contoh: Budi Santoso, ST" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+        </div>
+        <div>
+          <label for="newEmpNip" class="block text-xs font-bold text-slate-700 mb-1">NIP / NRP</label>
+          <input id="newEmpNip" type="text" placeholder="Contoh: NIP 198501012010121001" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+        </div>
+        <div>
+          <label for="newEmpPangkat" class="block text-xs font-bold text-slate-700 mb-1">Pangkat / Golongan</label>
+          <input id="newEmpPangkat" type="text" placeholder="Contoh: Penata / III-c" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+        </div>
+        <div>
+          <label for="newEmpJabatan" class="block text-xs font-bold text-slate-700 mb-1">Jabatan Kesatkeran</label>
+          <input id="newEmpJabatan" type="text" placeholder="Contoh: Petugas Teknik" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+        </div>
+        <div class="flex justify-end gap-2 pt-3">
+          <button id="btnCancelAddEmp" type="button" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#162a5c] hover:bg-blue-800 text-white shadow">
+            Simpan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 11: NOTIFIKASI POPUP "BERHASIL MENAMBAH PEGAWAI" (NO-PRINT)
+       ======================================================================== -->
+  <div id="addEmpSuccessModal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 text-center">
+      <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
+        ✅
+      </div>
+      <h2 class="text-lg font-bold text-slate-800 mb-2">Berhasil Menambah Pegawai</h2>
+      <p id="addEmpSuccessInfo" class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2.5 mb-5"></p>
+      <div class="flex justify-center">
+        <button id="btnAddEmpSuccessOk" type="button" class="px-6 py-2 rounded-lg text-xs font-bold bg-[#162a5c] hover:bg-blue-800 text-white shadow">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       PANEL BAWAH: SETTINGAN BESAR HURUF & ZOOM LEMBAR KERJA (NO-PRINT)
+       ======================================================================== -->
+  <footer class="bottom-settings-bar no-print">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs">
+      <!-- Info Kertas -->
+      <div class="hidden sm:flex items-center gap-2 text-slate-300">
+        <span>📄 Kertas: <strong>A4S (Margin 1,5 cm • Arial)</strong></span>
+      </div>
+
+      <!-- Kontrol Besar Huruf & Zoom Lembar Kerja -->
+      <div class="flex flex-wrap items-center gap-5 mx-auto sm:mx-0">
+        <!-- Settingan Besar Huruf -->
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-yellow-300">🔤 Besar Huruf:</span>
+          <button id="btnFontDec" type="button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-2 py-1 rounded transition" title="Perkecil Huruf">A-</button>
+          <select id="selectDocFontSize" class="bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-yellow-400">
+            <option value="8">8 pt</option>
+            <option value="9">9 pt</option>
+            <option value="9.5">9.5 pt</option>
+            <option value="10" selected>10 pt (Standar)</option>
+            <option value="10.5">10.5 pt</option>
+            <option value="11">11 pt</option>
+            <option value="12">12 pt</option>
+          </select>
+          <button id="btnFontInc" type="button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-2 py-1 rounded transition" title="Perbesar Huruf">A+</button>
+        </div>
+
+        <!-- Settingan Zoom Lembar Kerja -->
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-yellow-300">🔍 Zoom Lembar Kerja:</span>
+          <button id="btnZoomOut" type="button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-2 py-1 rounded transition" title="Perkecil Tampilan">−</button>
+          <input id="rangeDocZoom" type="range" min="60" max="150" step="5" value="100" class="w-24 sm:w-32 accent-yellow-400 cursor-pointer" />
+          <span id="zoomPercentLabel" class="font-bold text-white min-w-[42px] text-center">100%</span>
+          <button id="btnZoomIn" type="button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-2 py-1 rounded transition" title="Perbesar Tampilan">+</button>
+          <button id="btnZoomReset" type="button" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] transition" title="Reset Ukuran Huruf & Zoom ke 100%">Reset</button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="database.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
