@@ -1436,7 +1436,7 @@ async function downloadWordDocument() {
       </tr>
       <tr>
         <td style="text-align:center;padding-top:8pt;">
-          Bendahara Pengeluaran<br/>Pelaksanaan Jalan Nasional Wil.III Prov.SulSel<br/><br/><br/><br/>
+          Bendahara Pengeluaran<br/>Pelaksanaan Jalan Nasional Wil. III Prov. SulSel<br/><br/><br/><br/>
           <b><u>${escapeHtml(bendaharaNama)}</u></b><br/>
           ${escapeHtml(bendaharaNip)}
         </td>
