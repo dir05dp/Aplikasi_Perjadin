@@ -1475,7 +1475,7 @@ async function downloadWordDocument() {
       <tr>
         <td colspan="3"></td>
         <td colspan="2" style="text-align:center;padding-top:8pt;">
-          Kuasa Pengguna Anggaran<br/>PJN Wil.III Prov.SulSel<br/><br/><br/><br/>
+          Kuasa Pengguna Anggaran<br/>PJN Wil. III Prov. SulSel<br/><br/><br/><br/>
           <b><u>${escapeHtml(kpaRincianNama)}</u></b><br/>
           ${escapeHtml(kpaRincianNip)}
         </td>
