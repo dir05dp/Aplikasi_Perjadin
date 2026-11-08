@@ -90,7 +90,7 @@ let autoSyncFlags = {
 };
 
 // ============================================================================
-// KONFIGURASI CLOUD FIREBASE REALTIME DATABASE (DIAMBIL DARI DATABASE.JS)
+// KONFIGURASI  REALTIME DATABASE (DIAMBIL DARI DATABASE.JS)
 // ============================================================================
 function getFirebaseDatabaseUrl() {
   if (typeof FIREBASE_DATABASE_URL !== "undefined" && FIREBASE_DATABASE_URL) {
@@ -1899,7 +1899,7 @@ function initAntiInspectProtection() {
   // namun pengguna tetap bebas memblok teks dengan mouse & menekan Ctrl+C / Ctrl+V.
   document.addEventListener("contextmenu", e => {
     e.preventDefault();
-    showToast("Klik kanan dinonaktifkan untuk proteksi Inspect Element. Gunakan Ctrl+C / Ctrl+V untuk Copy-Paste teks.", "warning");
+    showToast("Klik kanan dinonaktifkan. Gunakan Ctrl+C / Ctrl+V untuk Copy-Paste teks.", "warning");
   });
 
   // Blokir pintasan keyboard Inspect Element / View Source / DevTools
@@ -2082,7 +2082,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const synced = await syncDatabasePegawaiToCloud();
     showToast(
       synced
-        ? `Data pegawai "${newNama}" diperbarui & disinkronkan ke Cloud Firebase!`
+        ? `Data pegawai "${newNama}" diperbarui!`
         : `Data pegawai "${newNama}" berhasil diperbarui.`,
       "success"
     );
@@ -2111,7 +2111,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const synced = await syncDatabasePegawaiToCloud();
     showToast(
       synced
-        ? `Pegawai "${removed.nama}" dihapus & Database Cloud Firebase diperbarui.`
+        ? `Pegawai "${removed.nama}" dihapus!.`
         : `Pegawai "${removed.nama}" dihapus dari database.`,
       "info"
     );
