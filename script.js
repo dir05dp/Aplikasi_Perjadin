@@ -27,7 +27,7 @@ const INITIAL_FORM_STATE = {
   spd_kode_no: "",
   spd_nomor: "KU0205/SPD/Bbpjn6.7/2026/131",
   spd_kasatker_jabatan: "Kepala Satuan Kerja PJN Wil. III Prov. Sulawesi Selatan",
-  spd_pegawai_nama: "Malik, ST., MM",
+  spd_pegawai_nama: "Muhammad Takdir, S.Kom",
   spd_instansi_pegawai: "Satker PJN Wil. III Prov. Sulawesi Selatan",
   spd_tingkat_biaya: "-",
   spd_maksud: "Penelitian Lapangan Dalam Rangka Serah Terima Hibah BMN Berupa Jembatan Gantung Tahun 2024 Lingkup BBPJN SulSel ke Pemda Kab. Maros, Pemda Kab. Bone & Pemda Kab. Jeneponto Prov. SulSel",
@@ -287,7 +287,7 @@ function showToast(message, type = "info") {
 // DATABASE PEGAWAI & DROPDOWN SUMBER (SHEET 1 & SHEET 2)
 // ============================================================================
 const REQUIRED_PERSON_SELECTS = [
-  { id: "spd_pegawai_nama", defaultVal: "Malik, ST., MM" },
+  { id: "spd_pegawai_nama", defaultVal: "Muhammad Takdir, S.Kom" },
   { id: "spd_kpa_nama", defaultVal: "Malik, ST., MM" },
   { id: "rincian_bendahara_nama", defaultVal: "Wahyuni, SE" },
   { id: "rincian_kpa_nama", defaultVal: "Malik, ST., MM" }
