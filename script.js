@@ -5,7 +5,7 @@
 // ============================================================================
 
 const APP_PASSWORD = "wil3";
-const DB_PASSWORD = "wil3";
+const DB_PASSWORD = "pjn3";
 const STORAGE_KEY_DATA = "spj_pjn3_saved_state_v1";
 const STORAGE_KEY_RECORDS = "spj_pjn3_cloud_records_v1";
 const STORAGE_KEY_DB = "spj_pjn3_saved_db_v1";
